@@ -3,7 +3,6 @@
 import tkinter as tk
 from tkinter import messagebox, ttk
 
-# Importamos las funciones de la bóveda (base de datos)
 from database import (
     actualizar_producto,
     eliminar_producto,
@@ -15,100 +14,99 @@ from database import (
 class Stock:
 
     def __init__(self, pestana):
-        # Guardamos la referencia a la pestaña de la interfaz donde se dibuja este módulo
         self.pestana = pestana
 
-        # ----------------------------------------------------------------------
-        # 1. FORMULARIO DE ENTRADA (CAMPOS DE TEXTO Y ETIQUETAS)
-        # ----------------------------------------------------------------------
-
-        # Campo para el Nombre del Producto
-        tk.Label(self.pestana, text="Producto:").grid(
-            row=0, column=0, padx=5, pady=4, sticky="e"
+        # ======================================================================
+        # 1. FORMULARIO DE ENTRADA DE PRODUCTOS
+        # ======================================================================
+        tk.Label(self.pestana, text="Nombre:").grid(
+            row=0, column=0, padx=5, pady=5, sticky="e"
         )
-        self.caja_nombre = tk.Entry(self.pestana, width=25)
-        self.caja_nombre.grid(row=0, column=1, padx=5, pady=4)
+        self.txt_nombre = tk.Entry(self.pestana, width=25)
+        self.txt_nombre.grid(row=0, column=1, padx=5, pady=5)
 
-        # Campo para el Precio Unitario
         tk.Label(self.pestana, text="Precio:").grid(
-            row=1, column=0, padx=5, pady=4, sticky="e"
+            row=1, column=0, padx=5, pady=5, sticky="e"
         )
-        self.caja_precio = tk.Entry(self.pestana, width=25)
-        self.caja_precio.grid(row=1, column=1, padx=5, pady=4)
+        self.txt_precio = tk.Entry(self.pestana, width=25)
+        self.txt_precio.grid(row=1, column=1, padx=5, pady=5)
 
-        # Campo para la Cantidad en Stock
         tk.Label(self.pestana, text="Stock:").grid(
-            row=2, column=0, padx=5, pady=4, sticky="e"
+            row=2, column=0, padx=5, pady=5, sticky="e"
         )
-        self.caja_stock = tk.Entry(self.pestana, width=25)
-        self.caja_stock.grid(row=2, column=1, padx=5, pady=4)
+        self.txt_stock = tk.Entry(self.pestana, width=25)
+        self.txt_stock.grid(row=2, column=1, padx=5, pady=5)
 
-        # Variable auxiliar para guardar el ID del elemento seleccionado
-        self.id_seleccionado = None
+        # ======================================================================
+        # 2. BOTONES DE ACCIÓN (COLUMNA DERECHA)
+        # ======================================================================
+        tk.Button(
+            self.pestana,
+            text="Agregar",
+            command=self.agregar_datos,
+            width=14,
+        ).grid(row=0, column=4, padx=15, pady=2, sticky="w")
 
-        # ----------------------------------------------------------------------
-        # 2. TABLA VISUAL (TREEVIEW)
-        # ----------------------------------------------------------------------
-        # Definimos las columnas que se mostrarán en pantalla
-        columnas = ("ID", "Producto", "Precio", "Stock", "Estado Stock")
+        tk.Button(
+            self.pestana,
+            text="Modificar",
+            command=self.modificar_datos,
+            width=14,
+        ).grid(row=1, column=4, padx=15, pady=2, sticky="w")
+
+        tk.Button(
+            self.pestana,
+            text="Eliminar",
+            command=self.eliminar_datos,
+            width=14,
+        ).grid(row=2, column=4, padx=15, pady=2, sticky="w")
+
+        tk.Button(
+            self.pestana,
+            text="Limpiar",
+            command=self.limpiar_campos,
+            width=14,
+        ).grid(row=3, column=4, padx=15, pady=2, sticky="w")
+
+        # ======================================================================
+        # 3. TABLA DE PRODUCTOS (TREEVIEW)
+        # ======================================================================
+        columnas = ("ID", "Nombre", "Precio", "Stock")
         self.tabla = ttk.Treeview(
-            self.pestana, columns=columnas, show="headings", height=10
+            self.pestana, columns=columnas, show="headings", height=12
         )
 
-        # Configuramos los anchos de cada columna
-        anchos = [50, 200, 100, 80, 120]
+        anchos = [60, 250, 120, 100]
         for idx, col in enumerate(columnas):
             self.tabla.heading(col, text=col)
             self.tabla.column(col, width=anchos[idx], anchor="center")
 
-        # Ubicamos la tabla dentro de la pestaña usando la grilla
         self.tabla.grid(
-            row=4, column=0, columnspan=5, padx=15, pady=(10, 15), sticky="ew"
+            row=5, column=0, columnspan=5, padx=15, pady=15, sticky="ew"
         )
 
-        # ----------------------------------------------------------------------
-        # 3. BOTONES DE ACCIÓN
-        # ----------------------------------------------------------------------
-        # Botón Guardar: inserta un nuevo producto en la base de datos
-        tk.Button(
-            self.pestana, text="Guardar", command=self.guardar_datos, width=14
-        ).grid(row=0, column=4, padx=15, pady=2, sticky="w")
+        # Configuración de alerta visual para stock bajo (menos de 5 unidades)
+        self.tabla.tag_configure(
+            "alerta_stock", background="#FFCCCC", foreground="black"
+        )
 
-        # Botón Modificar: actualiza los valores del producto seleccionado
-        tk.Button(
-            self.pestana, text="Modificar", command=self.modificar_datos, width=14
-        ).grid(row=1, column=4, padx=15, pady=2, sticky="w")
-
-        # Botón Eliminar: borra el producto seleccionado de la base de datos
-        tk.Button(
-            self.pestana, text="Eliminar", command=self.eliminar_datos, width=14
-        ).grid(row=2, column=4, padx=15, pady=2, sticky="w")
-
-        # Botón Refrescar: fuerza la recarga de los datos de la base de datos a la tabla
-        tk.Button(
-            self.pestana, text="Refrescar", command=self.cargar_datos_en_tabla, width=14
-        ).grid(row=3, column=4, padx=15, pady=2, sticky="w")
-
-        # Carga inicial de datos al abrir el programa por primera vez
+        # Cargar los datos almacenados al iniciar
         self.cargar_datos_en_tabla()
 
-    # --------------------------------------------------------------------------
-    # 4. MÉTODOS DE LA CLASE (LÓGICA INTERNA)
-    # --------------------------------------------------------------------------
+    # ==========================================================================
+    # MÉTODOS Y LÓGICA DE GESTIÓN DE STOCK
+    # ==========================================================================
 
     def cargar_datos_en_tabla(self):
-        """Limpia la tabla visual y la vuelve a llenar con los datos actualizados de la base de datos."""
-        # Paso A: Borramos todas las filas actuales de la tabla en pantalla
+        """Limpia y recarga la tabla con los productos de la base de datos."""
         for item in self.tabla.get_children():
             self.tabla.delete(item)
 
-        # Paso B: Consultamos los datos actualizados en la base de datos
         productos = obtener_productos()
-
-        # Paso C: Recorremos los registros devueltos y los insertamos en la tabla
         for p in productos:
-            # Evaluación del stock de seguridad (límite: 5 unidades o menos)
-            estado = "REPONER" if p["stock"] <= 5 else "OK"
+            tags = ()
+            if p["stock"] <= 5:
+                tags = ("alerta_stock",)
 
             self.tabla.insert(
                 "",
@@ -118,107 +116,189 @@ class Stock:
                     p["nombre"],
                     f"$ {p['precio']:.2f}",
                     p["stock"],
-                    estado,
                 ),
+                tags=tags,
             )
 
     def limpiar_campos(self):
-        """Vacía las cajas de texto del formulario para permitir un nuevo ingreso."""
-        self.caja_nombre.delete(0, tk.END)
-        self.caja_precio.delete(0, tk.END)
-        self.caja_stock.delete(0, tk.END)
-        self.id_seleccionado = None
+        """Limpia los campos del formulario principal."""
+        self.txt_nombre.delete(0, tk.END)
+        self.txt_precio.delete(0, tk.END)
+        self.txt_stock.delete(0, tk.END)
 
-    def guardar_datos(self):
-        """Lee el formulario, valida las entradas e inserta un registro nuevo."""
-        nombre = self.caja_nombre.get().strip()
-        precio = self.caja_precio.get().strip()
-        stock = self.caja_stock.get().strip()
+    def agregar_datos(self):
+        """Registra un nuevo producto en la base de datos."""
+        nombre = self.txt_nombre.get().strip()
+        precio_str = self.txt_precio.get().strip()
+        stock_str = self.txt_stock.get().strip()
 
-        # Validación de campos vacíos
-        if not nombre or not precio or not stock:
+        if not nombre or not precio_str or not stock_str:
             messagebox.showerror(
-                "Error", "Todos los campos son obligatorios.", parent=self.pestana
+                "Error",
+                "Todos los campos son obligatorios.",
+                parent=self.pestana,
             )
             return
 
-        # Validación de tipos numericos
         try:
-            precio_num = float(precio)
-            stock_num = int(stock)
+            precio = float(precio_str)
+            stock = int(stock_str)
+            if precio < 0 or stock < 0:
+                raise ValueError
         except ValueError:
             messagebox.showerror(
                 "Error",
-                "Precio debe ser un numero y Stock un entero.",
+                "El precio y el stock deben ser valores numéricos positivos.",
                 parent=self.pestana,
             )
             return
 
-        # Intento de inserción en la base de datos
-        if insertar_producto(nombre, precio_num, stock_num):
+        if insertar_producto(nombre, precio, stock):
             messagebox.showinfo(
-                "Exito", "Producto guardado correctamente.", parent=self.pestana
+                "Éxito",
+                "Producto guardado correctamente.",
+                parent=self.pestana,
             )
             self.limpiar_campos()
             self.cargar_datos_en_tabla()
         else:
             messagebox.showerror(
-                "Error", "No se pudo guardar el producto.", parent=self.pestana
+                "Error",
+                "No se pudo guardar el producto.",
+                parent=self.pestana,
             )
 
     def modificar_datos(self):
-        """Actualiza la información del producto seleccionado en la tabla."""
+        """Abre una ventana emergente (Toplevel) para modificar el producto seleccionado."""
         seleccion = self.tabla.selection()
         if not seleccion:
             messagebox.showwarning(
-                "Atencion",
-                "Selecciona un producto de la tabla.",
+                "Atención",
+                "Selecciona un producto de la tabla para modificar.",
                 parent=self.pestana,
             )
             return
 
-        # Obtenemos los valores de la fila seleccionada
         valores = self.tabla.item(seleccion[0], "values")
         id_prod = valores[0]
+        nombre_actual = valores[1]
+        precio_actual = valores[2].replace("$", "").strip()
+        stock_actual = valores[3]
 
-        nombre = self.caja_nombre.get().strip()
-        precio = self.caja_precio.get().strip().replace("$", "")
-        stock = self.caja_stock.get().strip()
+        # Ventana emergente (Toplevel)
+        ventana_editar = tk.Toplevel(self.pestana)
+        ventana_editar.title("Modificar Producto")
+        ventana_editar.geometry("300x200")
+        ventana_editar.resizable(False, False)
 
-        # Intento de actualización en la base de datos
-        if actualizar_producto(id_prod, nombre, float(precio), int(stock)):
-            messagebox.showinfo(
-                "Exito", "Producto actualizado correctamente.", parent=self.pestana
+        ventana_editar.transient(self.pestana)
+        ventana_editar.grab_set()
+
+        tk.Label(ventana_editar, text="Nombre:").grid(
+            row=0, column=0, padx=10, pady=10, sticky="e"
+        )
+        txt_nom = tk.Entry(ventana_editar, width=20)
+        txt_nom.grid(row=0, column=1, padx=10, pady=10)
+        txt_nom.insert(0, nombre_actual)
+
+        tk.Label(ventana_editar, text="Precio:").grid(
+            row=1, column=0, padx=10, pady=10, sticky="e"
+        )
+        txt_pre = tk.Entry(ventana_editar, width=20)
+        txt_pre.grid(row=1, column=1, padx=10, pady=10)
+        txt_pre.insert(0, precio_actual)
+
+        tk.Label(ventana_editar, text="Stock:").grid(
+            row=2, column=0, padx=10, pady=10, sticky="e"
+        )
+        txt_stk = tk.Entry(ventana_editar, width=20)
+        txt_stk.grid(row=2, column=1, padx=10, pady=10)
+        txt_stk.insert(0, stock_actual)
+
+        tk.Button(
+            ventana_editar,
+            text="Guardar Cambios",
+            command=lambda: self.confirmar_modificacion(
+                ventana_editar, id_prod, txt_nom, txt_pre, txt_stk
+            ),
+        ).grid(row=3, column=0, columnspan=2, pady=15)
+
+    def confirmar_modificacion(
+        self, ventana_popup, id_prod, txt_nom, txt_pre, txt_stk
+    ):
+        """Procesa los cambios de la ventana emergente y actualiza la base de datos."""
+        nombre = txt_nom.get().strip()
+        precio_str = txt_pre.get().strip()
+        stock_str = txt_stk.get().strip()
+
+        if not nombre or not precio_str or not stock_str:
+            messagebox.showerror(
+                "Error",
+                "Todos los campos son obligatorios.",
+                parent=ventana_popup,
             )
+            return
+
+        try:
+            precio = float(precio_str)
+            stock = int(stock_str)
+        except ValueError:
+            messagebox.showerror(
+                "Error",
+                "El precio debe ser un número y el stock un número entero.",
+                parent=ventana_popup,
+            )
+            return
+
+        if actualizar_producto(id_prod, nombre, precio, stock):
+            messagebox.showinfo(
+                "Éxito",
+                "Producto actualizado correctamente.",
+                parent=self.pestana,
+            )
+            ventana_popup.destroy()
             self.limpiar_campos()
             self.cargar_datos_en_tabla()
         else:
             messagebox.showerror(
-                "Error", "No se pudo actualizar el producto.", parent=self.pestana
+                "Error",
+                "No se pudo actualizar el producto.",
+                parent=ventana_popup,
             )
 
     def eliminar_datos(self):
-        """Elimina de la base de datos el producto seleccionado en la tabla."""
+        """Elimina el producto seleccionado de la base de datos."""
         seleccion = self.tabla.selection()
         if not seleccion:
             messagebox.showwarning(
-                "Atencion",
-                "Selecciona un producto para eliminar.",
+                "Atención",
+                "Selecciona un producto de la tabla para eliminar.",
                 parent=self.pestana,
             )
             return
 
         valores = self.tabla.item(seleccion[0], "values")
         id_prod = valores[0]
+        nombre_prod = valores[1]
 
-        # Intento de eliminación en la base de datos
-        if eliminar_producto(id_prod):
-            messagebox.showinfo(
-                "Exito", "Producto eliminado correctamente.", parent=self.pestana
-            )
-            self.limpiar_campos()
-            self.cargar_datos_en_tabla()
-        else:
-            messagebox.showerror(
-                "Error", "No se pudo eliminar el producto.", parent=self.pestana
-            )
+        respuesta = messagebox.askyesno(
+            "Confirmar",
+            f"¿Estás seguro de eliminar el producto '{nombre_prod}'?",
+            parent=self.pestana,
+        )
+
+        if respuesta:
+            if eliminar_producto(id_prod):
+                messagebox.showinfo(
+                    "Éxito",
+                    "Producto eliminado correctamente.",
+                    parent=self.pestana,
+                )
+                self.limpiar_campos()
+                self.cargar_datos_en_tabla()
+            else:
+                messagebox.showerror(
+                    "Error",
+                    "No se pudo eliminar el producto.",
+                    parent=self.pestana,
+                )
