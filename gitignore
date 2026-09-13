@@ -1,0 +1,4 @@
+.venv/          ← carpeta del entorno virtual
+__pycache__/    ← carpeta que Python genera automáticamente
+*.pyc           ← archivos compilados de Python
+.idea/          ← carpeta de configuración de PyCharm
