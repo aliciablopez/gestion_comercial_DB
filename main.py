@@ -3,22 +3,26 @@
 import tkinter as tk
 from database import inicializar_base_datos
 from interfaz import AplicacionPrincipal
+from login import VentanaLogin
 
 
-def main():
-    # Paso 1: Inicializamos la base de datos (crea las tablas si no existen)
-    inicializar_base_datos()
+def iniciar_aplicacion():
+  # 1. Asegurar que las tablas existan en la base de datos
+  inicializar_base_datos()
 
-    # Paso 2: Creamos la ventana principal del sistema
-    ventana = tk.Tk()
+  # 2. Desplegar la ventana de Login
+  raiz_login = tk.Tk()
+  app_login = VentanaLogin(raiz_login)
+  raiz_login.mainloop()
 
-    # Paso 3: Construimos la interfaz sobre esa ventana
-    AplicacionPrincipal(ventana)
+  # 3. Si el login se completó con éxito, abrir la ventana principal
+  if app_login.usuario_validado:
+    rol_usuario = app_login.usuario_validado["rol"]
 
-    # Paso 4: Mantenemos la ventana abierta y activa esperando las acciones del usuario
-    ventana.mainloop()
+    raiz_principal = tk.Tk()
+    app_principal = AplicacionPrincipal(raiz_principal, rol_usuario)
+    raiz_principal.mainloop()
 
 
-# Punto de entrada principal al ejecutar este archivo
 if __name__ == "__main__":
-    main()
+  iniciar_aplicacion()

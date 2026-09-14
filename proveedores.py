@@ -41,8 +41,6 @@ from database import (
 #   showwarning() → advertencia
 #   showerror()   → error
 #   askyesno()    → confirmación
-
-
 # ==============================================================================
 # 2. CLASE PROVEEDORES
 # ==============================================================================

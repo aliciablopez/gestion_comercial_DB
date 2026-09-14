@@ -393,3 +393,31 @@ def obtener_facturas():
   facturas = cursor.fetchall()
   conexion.close()
   return facturas
+
+def validar_credenciales(usuario, contrasena):
+  """Verifica usuario y contraseña.
+
+  Devuelve un diccionario con los datos y el rol si es correcto, o None si
+  falla.
+  """
+  conexion = obtener_conexion()
+  cursor = conexion.cursor()
+  cursor.execute(
+      """
+        SELECT id, usuario, rol, empleado_id 
+        FROM usuarios 
+        WHERE usuario = ? AND contrasena = ?
+    """,
+      (usuario, contrasena),
+  )
+  usuario_encontrado = cursor.fetchone()
+  conexion.close()
+
+  if usuario_encontrado:
+    return {
+        "id": usuario_encontrado["id"],
+        "usuario": usuario_encontrado["usuario"],
+        "rol": usuario_encontrado["rol"],
+        "empleado_id": usuario_encontrado["empleado_id"],
+    }
+  return None
